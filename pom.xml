@@ -10,6 +10,8 @@
     <modules>
         <module>gmall0715-common</module>
         <module>gmall0715-mock</module>
+        <module>gmall0715-logger</module>
+        <module>gmall0715-realtime</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -113,7 +115,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-
-
 </project>

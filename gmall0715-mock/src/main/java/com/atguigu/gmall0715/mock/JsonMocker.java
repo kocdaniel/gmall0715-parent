@@ -1,7 +1,8 @@
-package com.atguigu.gmall0715.mock.util;
+package com.atguigu.gmall0715.mock;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.atguigu.gmall0715.mock.util.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,7 +29,7 @@ public class JsonMocker {
     };
     RandomOptionGroup<String>  areaOptionGroup= new RandomOptionGroup(areaOpts);
 
-    String appId="gmall2019";
+    String appId="gmall0715";
 
     RanOpt[] vsOpts= {new RanOpt("1.2.0",50),new RanOpt("1.1.2",15),
             new RanOpt("1.1.3",30),
