@@ -129,8 +129,6 @@ public class JsonMocker {
         //long ts= logDateUtil.getRandomDate().getTime();
         String ch=os.equals("ios")?"appstore": channelOptionGroup.getRandomOpt().getValue();
 
-
-
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("type","startup");
         jsonObject.put("mid",mid);

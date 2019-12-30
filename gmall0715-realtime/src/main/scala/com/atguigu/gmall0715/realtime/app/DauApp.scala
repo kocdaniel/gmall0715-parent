@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON
 import com.atguigu.gmall0715.common.constant.GmallConstant
 import com.atguigu.gmall0715.realtime.bean.StartUpLog
 import com.atguigu.gmall0715.realtime.util.{MyKafkaUtil, RedisUtil}
+import org.apache.hadoop.conf.Configuration
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.spark.SparkConf
 import org.apache.spark.broadcast.Broadcast
@@ -15,21 +16,24 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import redis.clients.jedis.Jedis
+import org.apache.phoenix.spark._
 
 object DauApp {
 
   def main(args: Array[String]): Unit = {
 
-
+    //  1  消费kafka 的数据
     //  2  json字符串 -> 转换为一个对象 case class
     //  3  利用redis进行过滤
-    //  4  把过滤后的新数据进行写入 redis  ( 当日用户访问的清单)
+    //  4  把过滤后的新数据进行写入 redis  ( 当日用户访问的清单),写redis的目的是为了批次间去重
     //  5  再把数据写入到hbase中
 
     val sparkConf: SparkConf = new SparkConf().setMaster("local[*]").setAppName("DauApp")
     val ssc = new StreamingContext(sparkConf, Seconds(5))
+
     //  1  消费kafka 的数据
     val inputDstream: InputDStream[ConsumerRecord[String, String]] = MyKafkaUtil.getKafkaStream(GmallConstant.KAFKA_TOPIC_STARTUP, ssc)
+
 
     //    inputDstream.map(_.value()).print()
     //  2  json字符串 -> 转换为一个对象 case class
@@ -65,14 +69,14 @@ object DauApp {
         val dauKey: String = "dau:" + today
         val dauSet: util.Set[String] = jedis.smembers(dauKey)
         val dauBC: Broadcast[util.Set[String]] = ssc.sparkContext.broadcast(dauSet)
-        println("过滤前:"+rdd.count()+"条")
+        println("过滤前:" + rdd.count() + "条")
 
         // Executor端执行
         val filteredRDD: RDD[StartUpLog] = rdd.filter { startup =>
           val dauSet: util.Set[String] = dauBC.value
           !dauSet.contains(startup.mid)
         }
-        println("过滤后:"+filteredRDD.count()+"条")
+        println("过滤后:" + filteredRDD.count() + "条")
 
         filteredRDD
       }
@@ -80,9 +84,11 @@ object DauApp {
 
     // 本批次 自检去重
     // 相同的mid 保留第一条
-    val groupbyMidDStream: DStream[(String, Iterable[StartUpLog])] = filteredDS.map(startuplog=>(startuplog.mid,startuplog)).groupByKey()
+    val groupbyMidDStream: DStream[(String, Iterable[StartUpLog])] = filteredDS.map(startuplog => (startuplog.mid, startuplog)).groupByKey()
     val filteredSefDstream: DStream[StartUpLog] = groupbyMidDStream.map { case (mid, startupLogItr) =>
-      val top1list: List[StartUpLog] = startupLogItr.toList.sortWith((startupLog1, startupLog2) => startupLog1.ts < startupLog2.ts).take(1)
+      val top1list: List[StartUpLog] = startupLogItr.toList
+        .sortWith((startupLog1, startupLog2) => startupLog1.ts < startupLog2.ts)
+        .take(1)
       top1list(0)
     }
 
@@ -96,6 +102,7 @@ object DauApp {
           for (startUpData <- startUpItr) {
             println(startUpData)
             jedis.sadd("dau:" + startUpData.logDate, startUpData.mid)
+            jedis.expire("dau:" + startUpData.logDate, 2 * 24 * 3600) // 设置两天后过期
           }
 
           jedis.close()
@@ -103,7 +110,18 @@ object DauApp {
       }
     }
 
+    // 因为要分别写入redis和hbase，持久化可以只计算一次，提升效率
+    filteredSefDstream.cache()
+
     //  5  再把数据写入到hbase中
+    //   再把数据写入到hbase中
+    filteredSefDstream.foreachRDD(rdd => {
+      rdd.saveToPhoenix("GMALL0715_DAU",
+        Seq("MID", "UID", "APPID", "AREA", "OS", "CH", "TYPE", "VS", "LOGDATE", "LOGHOUR", "TS"),
+        new Configuration(),
+        Some("hadoop102,hadoop103,hadoop104:2181")
+      )
+    })
 
     ssc.start()
     ssc.awaitTermination()
