@@ -5,4 +5,16 @@
         select  count(*) ct  from gmall0715_dau
         where logdate=#{date}
     </select>
+
+    <select id="selectDauCountHour" resultMap="dauTotalHour">
+        select logHour, count(*) ct from gmall0715_dau
+        where logDate=#{date}
+        group by logHour
+    </select>
+
+    <resultMap id="dauTotalHour" type="java.util.Map">
+        <result column="LOGHOUR" property="hour"></result>
+        <result column="CT" property="ct"></result>
+    </resultMap>
+
 </mapper>
