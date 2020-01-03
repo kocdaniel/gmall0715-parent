@@ -1,6 +1,5 @@
 package com.atguigu.gmall0715.logger.controller;
 
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall0715.common.constant.GmallConstant;

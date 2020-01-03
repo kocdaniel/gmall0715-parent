@@ -91,6 +91,5 @@ public class PublisherController {
         }
 
         return yesterday;
-
     }
 }
