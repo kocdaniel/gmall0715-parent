@@ -38,8 +38,12 @@ public class JsonMocker {
 
     RandomOptionGroup<String>  vsOptionGroup= new RandomOptionGroup(vsOpts);
 
-    RanOpt[] eventOpts= {new RanOpt("addFavor",10),new RanOpt("addComment",30),
-            new RanOpt("addCart",20), new RanOpt("clickItem",40)
+//    RanOpt[] eventOpts= {new RanOpt("addFavor",10),new RanOpt("addComment",30),
+//            new RanOpt("addCart",20), new RanOpt("clickItem",40)
+//    };
+
+    RanOpt[] eventOpts= {new RanOpt("addFavor",10),new RanOpt("addComment",15),
+            new RanOpt("addCart",20), new RanOpt("clickItem",2) ,new RanOpt("coupon",45)
     };
 
     RandomOptionGroup<String>  eventOptionGroup= new RandomOptionGroup(eventOpts);
@@ -152,7 +156,7 @@ public class JsonMocker {
                 jsonMocker.sendLog(eventLog);
             }
             try {
-                Thread.sleep(20);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
