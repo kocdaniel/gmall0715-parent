@@ -27,6 +27,14 @@ public class CanalHandler {
         if(tableName.equals("order_info") && eventType == CanalEntry.EventType.INSERT && rowDataList.size() > 0){
             sendToKafka(GmallConstant.KAFKA_TOPIC_ORDER);
         }
+        // 订单详情和用户信息
+        if(tableName.equals("order_detail") && eventType == CanalEntry.EventType.INSERT && rowDataList.size() > 0){
+            sendToKafka(GmallConstant.KAFKA_TOPIC_ORDER_DETAIL);
+        }
+
+        if(tableName.equals("user_info") && (eventType == CanalEntry.EventType.INSERT || eventType == CanalEntry.EventType.UPDATE) && rowDataList.size() > 0){
+            sendToKafka(GmallConstant.KAFKA_TOPIC_USER_INFO);
+        }
 
     }
 
